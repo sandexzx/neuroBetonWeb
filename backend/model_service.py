@@ -10,6 +10,7 @@ import logging
 from models.cracks_model import CracksRecognitionModel
 from models.classification_model import ClassificationModel
 from models.mobilenet_regressor import MobileNetRegressor
+import torch.nn.functional as F
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -39,7 +40,7 @@ class ModelService:
             # Initialize transforms
             logger.info("Initializing transforms...")
             self.transform = transforms.Compose([
-                transforms.Resize((self.config['data']['image_size'], self.config['data']['image_size'])),
+                transforms.Resize((224, 224)),  # Используем тот же размер, что и в imageprocessingserver
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
             ])
@@ -68,8 +69,8 @@ class ModelService:
             
             # Initialize crack detection model
             logger.info("Initializing crack detection model...")
-            self.crack_model = CracksRecognitionModel()
-            self.crack_model.load_state_dict(torch.load('models/cracks/best_CracksRecognitionModel_model.pt', map_location=self.device))
+            self.crack_model = ClassificationModel(num_classes=2)
+            self.crack_model.load_state_dict(torch.load('../../concrete_type_classification/checkpoints/cracks/best_ClassificationModel_model.pt', map_location=self.device))
             self.crack_model.to(self.device)
             self.crack_model.eval()
             logger.info("Crack detection model initialized successfully")
@@ -163,15 +164,18 @@ class ModelService:
             # Делаем предсказание
             with torch.no_grad():
                 prediction = self.crack_model(image_tensor)
-                probabilities = torch.exp(prediction)  # Convert log probabilities to probabilities
-                crack_probability = probabilities[0][1].item()  # Probability of crack
+                logger.info(f"Raw prediction: {prediction.cpu().numpy()}")
+                # Получаем предсказанный класс
+                predicted_class = torch.argmax(prediction, dim=1).item()
+                logger.info(f"Predicted class: {predicted_class}")
                 
-            logger.info(f"Crack prediction: {crack_probability}")
-            
-            return {
-                'has_cracks': crack_probability > 0.5,
-                'crack_probability': crack_probability
+            # Используем только предсказанный класс, как в imageprocessingserver
+            result = {
+                'has_cracks': predicted_class == 0,  # 0 - есть трещина, 1 - нет трещины
+                'crack_probability': 1.0 if predicted_class == 0 else 0.0  # Для совместимости с интерфейсом
             }
+            logger.info(f"Final result: {result}")
+            return result
             
         except Exception as e:
             logger.error(f"Error in crack prediction: {str(e)}")
@@ -197,7 +201,8 @@ class ModelService:
                 logger.info(f"Raw prediction shape: {prediction.shape}")
                 logger.info(f"Raw prediction values: {prediction}")
                 
-                probabilities = torch.exp(prediction)  # Convert log probabilities to probabilities
+                # Применяем softmax к логам
+                probabilities = F.softmax(prediction, dim=1)
                 logger.info(f"Probabilities shape: {probabilities.shape}")
                 logger.info(f"Probabilities values: {probabilities}")
                 
