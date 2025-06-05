@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
+import timm
 from typing import Optional
 
 class MobileNetRegressor(nn.Module):
@@ -53,6 +54,12 @@ class MobileNetRegressor(nn.Module):
             nn.ReLU(inplace=True),
             nn.Linear(64, num_classes)
         )
+        
+        print(f"🏗️ Модель создана: {backbone}")
+        print(f"🔧 CNN features: {cnn_features}")
+        if use_canny:
+            print(f"🔧 Canny features: {canny_features}")
+        print(f"🔧 Total features: {total_features}")
     
     def _create_backbone(self, backbone: str, pretrained: bool) -> nn.Module:
         """Создание CNN backbone"""
@@ -134,4 +141,14 @@ class MobileNetRegressor(nn.Module):
         # Регрессия
         output = self.regressor(combined_features)
         
-        return output 
+        return output
+    
+    def freeze_backbone(self, freeze: bool = True):
+        """Заморозка/разморозка backbone для fine-tuning"""
+        for param in self.cnn_backbone.parameters():
+            param.requires_grad = not freeze
+        
+        if freeze:
+            print("🧊 CNN backbone заморожен")
+        else:
+            print("🔥 CNN backbone разморожен") 

@@ -24,6 +24,8 @@ class CracksRecognitionModel(nn.Module):
         self.dropout4 = self.dropout1
         self.pool4 = self.pool1
 
+        # Адаптивный пулинг для поддержки разных размеров изображений
+        self.adaptive_pool = nn.AdaptiveAvgPool2d((14, 14))  # 14x14x256 = 50176
         self.linear1 = nn.Linear(in_features=50176, out_features=1024)
         self.dropout = nn.Dropout(0.5)
 
@@ -38,6 +40,8 @@ class CracksRecognitionModel(nn.Module):
         x = self.pool3(self.dropout2(self.relu(self.conv3(x))))
         # 4th layer
         x = self.pool4(self.dropout4(self.relu(self.conv4(x))))
+        # Адаптивный пулинг
+        x = self.adaptive_pool(x)
         x = torch.flatten(x, start_dim=1)
         x = self.relu(self.linear1(x))
         x = self.dropout(x)

@@ -12,6 +12,7 @@ from models.classification_model import ClassificationModel
 from models.mobilenet_regressor import MobileNetRegressor
 
 # Настройка логирования
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ModelService:
@@ -24,7 +25,6 @@ class ModelService:
         self.config = None
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.label_mapping = None
-        self.scaler = None
         
     def initialize(self):
         if self.initialized:
@@ -39,15 +39,10 @@ class ModelService:
             # Initialize transforms
             logger.info("Initializing transforms...")
             self.transform = transforms.Compose([
-                transforms.Resize((224, 224)),  # Стандартный размер для MobileNet
+                transforms.Resize((self.config['data']['image_size'], self.config['data']['image_size'])),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
             ])
-            
-            # Load scaler for strength prediction
-            logger.info("Loading scaler...")
-            with open('models/scaler.pkl', 'rb') as f:
-                self.scaler = pickle.load(f)
             
             # Load label mapping for concrete type classification
             logger.info("Loading label mapping...")
@@ -62,13 +57,14 @@ class ModelService:
             self.model = MobileNetRegressor(
                 backbone=self.config['model']['backbone'],
                 pretrained=False,
-                use_canny=self.config['data']['use_canny'],
+                use_canny=self.config['model']['use_hybrid_features'],  # Используем значение из конфига
                 dropout=self.config['model']['dropout']
             )
-            checkpoint = torch.load('model/strength_model.pt', map_location=self.device)
+            checkpoint = torch.load('model/best_model.pth', map_location=self.device)  # Используем ту же модель
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.model.to(self.device)
             self.model.eval()
+            logger.info("Strength prediction model initialized successfully")
             
             # Initialize crack detection model
             logger.info("Initializing crack detection model...")
@@ -76,6 +72,7 @@ class ModelService:
             self.crack_model.load_state_dict(torch.load('models/cracks/best_CracksRecognitionModel_model.pt', map_location=self.device))
             self.crack_model.to(self.device)
             self.crack_model.eval()
+            logger.info("Crack detection model initialized successfully")
             
             # Initialize concrete type classification model
             logger.info("Initializing classification model...")
@@ -90,6 +87,7 @@ class ModelService:
                 self.classification_model.load_state_dict(checkpoint)
             self.classification_model.to(self.device)
             self.classification_model.eval()
+            logger.info("Classification model initialized successfully")
             
             self.initialized = True
             logger.info("All models initialized successfully")
@@ -101,10 +99,13 @@ class ModelService:
     def get_canny_edges(self, image_path, size):
         # Загружаем изображение
         image = cv2.imread(str(image_path))
+        if image is None:
+            raise ValueError(f"Could not load image from {image_path}")
+            
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
         # Изменяем размер
-        image = cv2.resize(image, (224, 224))  # Стандартный размер для MobileNet
+        image = cv2.resize(image, (size, size))
         
         # Конвертируем в градации серого
         gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
@@ -130,16 +131,17 @@ class ModelService:
             image_tensor = image_tensor.to(self.device)
             
             # Получаем Canny edges
-            canny_edges = self.get_canny_edges(image_path, 224)
+            canny_edges = self.get_canny_edges(image_path, self.config['data']['image_size'])
             canny_edges = canny_edges.to(self.device)
             
             # Делаем предсказание
             with torch.no_grad():
                 prediction = self.model(image_tensor, canny_edges)
+                logger.info(f"Raw prediction: {prediction.cpu().numpy()}")
                 
-            # Применяем обратное преобразование от нормализации
-            strength = self.scaler.inverse_transform(prediction.cpu().numpy().reshape(-1, 1))[0][0]
-            logger.info(f"Strength prediction: {strength}")
+            # Модель уже выдает значения в МПа
+            strength = prediction.cpu().numpy()[0][0]
+            logger.info(f"Final strength prediction: {strength}")
             
             return strength
             
