@@ -64,25 +64,36 @@ export function ImageUploader() {
       <div className="space-y-8">
         <div className="flex flex-col space-y-4">
           <div className="relative">
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              disabled={loading}
-              className="h-14 text-base bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm border-0 shadow-sm hover:shadow-md transition-all duration-200 rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-black/5 dark:file:bg-white/5 file:text-black dark:file:text-white hover:file:bg-black/10 dark:hover:file:bg-white/10 file:transition-colors file:duration-200"
-            />
-            <Button
-              onClick={handleSubmit}
-              disabled={!selectedFile || loading || !user}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-10 px-6 text-base font-semibold shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200 bg-black/80 dark:bg-white/10 hover:bg-black dark:hover:bg-white/20 rounded-lg"
-            >
-              {loading ? 'Processing...' : (
-                <>
-                  <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
-                  Analyze
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  disabled={loading}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="flex items-center justify-center h-10 px-6 text-base font-semibold shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200 bg-black/80 dark:bg-white/10 hover:bg-black dark:hover:bg-white/20 rounded-lg cursor-pointer"
+                >
+                  {selectedFile ? selectedFile.name : 'Choose File'}
+                </label>
+              </div>
+              <Button
+                onClick={handleSubmit}
+                disabled={!selectedFile || loading || !user}
+                className="h-10 px-6 text-base font-semibold shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200 bg-black/80 dark:bg-white/10 hover:bg-black dark:hover:bg-white/20 rounded-lg"
+              >
+                {loading ? 'Processing...' : (
+                  <>
+                    <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
+                    Analyze
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
           {selectedFile && (
             <p className="text-sm text-muted-foreground">
