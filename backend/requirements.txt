@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+pydantic
+python-jose[cryptography]
+torch
+torchvision
+Pillow
+opencv-python
+numpy
+pyyaml
+scikit-learn

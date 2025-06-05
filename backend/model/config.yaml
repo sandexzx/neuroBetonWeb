@@ -1,0 +1,45 @@
+# Конфигурация для обучения модели регрессии прочности бетона
+
+data:
+  csv_path: "src/Excel/concrete_strength_data.csv"
+  photo_path: "src/Photo/"
+  train_split: 0.8
+  image_size: 256
+  use_canny: true
+
+model:
+  backbone: "mobilenet_v2"  # mobilenet_v2, mobilenet_v3_small, mobilenet_v3_large
+  pretrained: true
+  dropout: 0.3
+  use_hybrid_features: true  # CNN + Canny features
+  
+training:
+  batch_size: 16
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 1e-4
+  optimizer: "adam"  # adam, adamw, sgd
+  scheduler: "cosine"  # cosine, step, reduce_on_plateau
+  early_stopping_patience: 15
+  
+augmentation:
+  rotation: 15
+  brightness: 0.2
+  contrast: 0.2
+  saturation: 0.1
+  horizontal_flip: 0.5
+  
+validation:
+  save_best_model: true
+  metric: "mae"  # mae, rmse, r2
+  
+logging:
+  use_wandb: false
+  project_name: "concrete_strength_regression"
+  log_images: true
+  log_frequency: 10
+  
+paths:
+  model_save_dir: "results/models/"
+  plots_save_dir: "results/plots/"
+  logs_save_dir: "results/logs/"

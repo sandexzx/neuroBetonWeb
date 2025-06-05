@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pth
+*.pt
+.next/
+node_modules/
+*.db
+*.pkl
+*.jpg
