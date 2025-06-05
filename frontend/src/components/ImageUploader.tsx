@@ -95,11 +95,6 @@ export function ImageUploader() {
               </Button>
             </div>
           </div>
-          {selectedFile && (
-            <p className="text-sm text-muted-foreground">
-              Selected file: {selectedFile.name}
-            </p>
-          )}
         </div>
         {prediction !== null && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
