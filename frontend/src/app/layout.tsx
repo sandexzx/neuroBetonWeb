@@ -30,12 +30,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <AuthProvider>
-          <div className="min-h-screen flex flex-col">
+          <div className="h-screen flex flex-col overflow-hidden">
             <Header />
-            <main className="flex-1 container mx-auto p-4">
+            <main className="flex-1 container mx-auto p-4 overflow-y-auto">
               {children}
             </main>
-            <footer className="bg-primary/10 p-4">
+            <footer className="bg-primary/10 p-2 flex-shrink-0">
               <div className="container mx-auto text-muted-foreground">
                 <p className="text-center">© 2025 NeuroBeton. All rights reserved.</p>
               </div>

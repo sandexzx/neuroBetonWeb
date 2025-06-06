@@ -8,12 +8,12 @@ import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center">
+    <div className="h-full flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: 'easeOut' }}
-        className="w-full max-w-4xl"
+        className="w-full max-w-4xl mx-auto px-4"
       >
         <div className="bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">

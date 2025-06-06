@@ -8,7 +8,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 export default function HistoryPage() {
   return (
-    <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center">
+    <div className="flex items-center justify-center py-8">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
