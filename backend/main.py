@@ -129,7 +129,7 @@ async def predict_image(file: UploadFile = File(...), username: str = None):
     conn.close()
     
     # Сохраняем файл
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().isoformat()
     filename = f"{timestamp}_{file.filename}"
     file_path = UPLOAD_DIR / filename
     

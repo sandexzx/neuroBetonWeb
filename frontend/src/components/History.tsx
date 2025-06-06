@@ -65,7 +65,13 @@ export function History() {
         <TableBody>
           {history.map((item, index) => (
             <TableRow key={index}>
-              <TableCell>{new Date(item.date).toLocaleString()}</TableCell>
+              <TableCell>{new Date(item.timestamp).toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}</TableCell>
               <TableCell>
                 <img 
                   src={item.image_url} 
