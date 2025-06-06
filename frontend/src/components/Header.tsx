@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useEffect } from "react";
 import { Navigation } from "./Navigation";
+import { Button } from "@/components/ui/button";
+import { ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
 
 export default function Header() {
   const router = useRouter();
@@ -29,12 +31,13 @@ export default function Header() {
         {user && (
           <div className="flex gap-4 items-center">
             <span className="text-muted-foreground">Welcome, {user.username}</span>
-            <button
+            <Button
               onClick={handleLogout}
-              className="text-destructive hover:text-destructive/80"
+              className="h-10 px-6 text-base font-semibold shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200 bg-black/80 dark:bg-white/10 hover:bg-black dark:hover:bg-white/20 rounded-lg flex items-center gap-2"
             >
+              <ArrowRightOnRectangleIcon className="w-5 h-5" />
               Logout
-            </button>
+            </Button>
           </div>
         )}
       </nav>
