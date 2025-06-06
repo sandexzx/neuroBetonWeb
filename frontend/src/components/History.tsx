@@ -49,7 +49,7 @@ export function History() {
 
   if (isLoading) {
     return (
-      <div className="p-8 bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 rounded-2xl shadow-sm backdrop-blur-sm">
+      <div className="h-full flex items-center justify-center p-8">
         <p className="text-center text-muted-foreground">Loading history...</p>
       </div>
     );
@@ -57,14 +57,14 @@ export function History() {
 
   if (history.length === 0) {
     return (
-      <div className="p-8 bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 rounded-2xl shadow-sm backdrop-blur-sm">
+      <div className="h-full flex items-center justify-center p-8">
         <p className="text-center text-muted-foreground">No history available</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="h-full overflow-auto p-6">
       <Table>
         <TableHeader>
           <TableRow>
