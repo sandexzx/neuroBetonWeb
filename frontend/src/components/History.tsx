@@ -62,13 +62,14 @@ export function History() {
   }, [user, addToast]);
 
   const formatDate = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
+    return new Date(timestamp).toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
-    });
+      minute: '2-digit',
+      hour12: false
+    }).replace(',', '');
   };
 
   const formatFilename = (filename: string) => {
@@ -76,39 +77,27 @@ export function History() {
     return filename.replace(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+_/, '');
   };
 
-  const getStrengthGrade = (strength: number) => {
-    if (strength >= 40) return { grade: 'A+', color: 'from-emerald-500 to-green-400' };
-    if (strength >= 30) return { grade: 'A', color: 'from-blue-500 to-cyan-400' };
-    if (strength >= 20) return { grade: 'B', color: 'from-yellow-500 to-orange-400' };
-    return { grade: 'C', color: 'from-red-500 to-pink-400' };
-  };
-
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center p-8">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"
-        />
-        <p className="text-center text-muted-foreground ml-4 text-lg">Loading history...</p>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-gray-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Загрузка истории...</p>
+        </div>
       </div>
     );
   }
 
   if (history.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <BeakerIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-xl text-muted-foreground mb-2">No analysis history yet</p>
-          <p className="text-sm text-muted-foreground/70">Upload some concrete images to start building your history</p>
-        </motion.div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <PhotoIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">История анализов пуста</p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+            Загрузите изображение для анализа прочности бетона
+          </p>
+        </div>
       </div>
     );
   }
@@ -118,8 +107,6 @@ export function History() {
       <div className="space-y-4">
         <AnimatePresence>
           {history.map((item, index) => {
-            const strengthGrade = getStrengthGrade(item.strength);
-            
             return (
               <motion.div
                 key={`${item.timestamp}-${index}`}
@@ -168,23 +155,17 @@ export function History() {
                     {/* Strength Analysis */}
                     <div className="flex items-center justify-between p-4 bg-gradient-to-r from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 rounded-xl backdrop-blur-sm">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg bg-gradient-to-r ${strengthGrade.color} bg-opacity-20`}>
+                        <div className={`p-2 rounded-lg bg-gradient-to-r ${item.strength >= 40 ? 'bg-emerald-500/10' : item.strength >= 30 ? 'bg-yellow-500/10' : 'bg-red-500/10'} bg-opacity-20`}>
                           <BeakerIcon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                         </div>
                         <div>
                           <p className="font-medium text-gray-900 dark:text-white">
-                            Concrete Strength
+                            Прочность
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            Grade {strengthGrade.grade} material
+                          <p className="text-sm text-muted-foreground max-w-[200px] truncate">
+                            {item.strength.toFixed(2)} МПа
                           </p>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-lg font-bold bg-gradient-to-r ${strengthGrade.color} bg-clip-text text-transparent`}>
-                          {item.strength.toFixed(1)} MPa
-                        </p>
-                        <p className="text-xs text-muted-foreground">strength</p>
                       </div>
                     </div>
                       
@@ -200,18 +181,18 @@ export function History() {
                         </div>
                         <div>
                           <p className="font-medium text-gray-900 dark:text-white">
-                            Crack Detection
+                            Трещины
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            {item.cracks.has_cracks ? 'Cracks detected' : 'No cracks found'}
+                          <p className="text-sm text-muted-foreground max-w-[200px] truncate">
+                            {item.cracks.has_cracks ? 'Обнаружены' : 'Не обнаружены'}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`text-lg font-bold ${item.cracks.has_cracks ? 'text-red-600' : 'text-green-600'}`}>
+                        <p className="text-lg font-bold text-red-600 dark:text-red-400">
                           {Math.round(item.cracks.probability * 100)}%
                         </p>
-                        <p className="text-xs text-muted-foreground">confidence</p>
+                        <p className="text-xs text-muted-foreground">уверенность</p>
                       </div>
                     </div>
 
@@ -223,7 +204,7 @@ export function History() {
                         </div>
                         <div>
                           <p className="font-medium text-gray-900 dark:text-white">
-                            Material Type
+                            Тип материала
                           </p>
                           <p className="text-sm text-muted-foreground max-w-[200px] truncate">
                             {item.concrete_type.type}
@@ -234,7 +215,7 @@ export function History() {
                         <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
                           {Math.round(item.concrete_type.confidence * 100)}%
                         </p>
-                        <p className="text-xs text-muted-foreground">confidence</p>
+                        <p className="text-xs text-muted-foreground">уверенность</p>
                       </div>
                     </div>
                   </div>

@@ -36,10 +36,10 @@ export default function Home() {
             <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-8 fade-in-up">
               <CardHeader className="text-center p-0 mb-4">
                 <CardTitle className="text-4xl font-semibold tracking-tight mb-2 font-sans" style={{letterSpacing: '-0.02em'}}>
-                  Welcome to <span className="bg-gradient-to-r from-black via-gray-700 to-gray-400 bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-gray-500">NeuroBeton</span>
+                  Добро пожаловать в <span className="bg-gradient-to-r from-black via-gray-700 to-gray-400 bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-gray-500">NeuroBeton</span>
                 </CardTitle>
                 <CardDescription className="text-lg text-muted-foreground mb-2 font-sans">
-                  Analyze concrete strength using neural networks
+                  Анализ прочности бетона с помощью нейронных сетей
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -50,7 +50,7 @@ export default function Home() {
                     size="lg"
                     className="w-full flex items-center justify-center gap-2 text-lg font-semibold shadow-md hover:scale-[1.03] active:scale-95 transition-transform duration-200 bg-black/80 dark:bg-white/10 hover:bg-black dark:hover:bg-white/20"
                   >
-                    <ArrowRightIcon className="w-5 h-5" /> Login
+                    <ArrowRightIcon className="w-5 h-5" /> Войти
                   </Button>
                   <Button
                     onClick={() => router.push('/auth/register')}
@@ -58,7 +58,7 @@ export default function Home() {
                     size="lg"
                     className="w-full flex items-center justify-center gap-2 text-lg font-semibold shadow-md hover:scale-[1.03] active:scale-95 transition-transform duration-200 border-black/80 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/5"
                   >
-                    <UserPlusIcon className="w-5 h-5" /> Register
+                    <UserPlusIcon className="w-5 h-5" /> Регистрация
                   </Button>
                 </div>
               </CardContent>

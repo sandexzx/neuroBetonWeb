@@ -39,7 +39,7 @@ export default function RootLayout({
               </main>
               <footer className="bg-primary/10 p-2 flex-shrink-0">
                 <div className="container mx-auto text-muted-foreground">
-                  <p className="text-center">© 2025 NeuroBeton. All rights reserved.</p>
+                  <p className="text-center">© 2025 NeuroBeton. Все права защищены.</p>
                 </div>
               </footer>
             </div>

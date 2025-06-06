@@ -17,12 +17,12 @@ export function Navigation() {
   const navItems = [
     {
       href: '/dashboard',
-      label: 'Dashboard',
+      label: 'Панель управления',
       icon: HomeIcon,
     },
     {
       href: '/history', 
-      label: 'History',
+      label: 'История',
       icon: ClockIcon,
     },
   ];

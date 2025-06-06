@@ -35,8 +35,8 @@ export function ImageUploader() {
     if (!file.type.startsWith('image/')) {
       addToast({
         type: 'error',
-        title: 'Invalid file type',
-        description: 'Please select an image file (JPG, PNG, etc.)'
+        title: 'Неверный тип файла',
+        description: 'Пожалуйста, выберите файл изображения (JPG, PNG и т.д.)'
       });
       return;
     }
@@ -45,8 +45,8 @@ export function ImageUploader() {
     if (file.size > 10 * 1024 * 1024) {
       addToast({
         type: 'error',
-        title: 'File too large',
-        description: 'Please select an image smaller than 10MB'
+        title: 'Файл слишком большой',
+        description: 'Пожалуйста, выберите изображение меньше 10MB'
       });
       return;
     }
@@ -119,15 +119,15 @@ export function ImageUploader() {
       setPrediction(data);
       addToast({
         type: 'success',
-        title: 'Analysis complete!',
-        description: `Concrete strength: ${data.strength.toFixed(2)} MPa`
+        title: 'Анализ завершен!',
+        description: `Прочность бетона: ${data.strength.toFixed(2)} МПа`
       });
     } catch (error: any) {
       console.error('Error:', error);
       addToast({
         type: 'error',
-        title: 'Analysis failed',
-        description: error.message || 'Please try again with a different image.'
+        title: 'Ошибка анализа',
+        description: error.message || 'Пожалуйста, попробуйте с другим изображением.'
       });
     } finally {
       setLoading(false);
@@ -169,10 +169,10 @@ export function ImageUploader() {
               </motion.div>
               
               <h3 className="text-xl font-semibold mb-2 text-gray-700 dark:text-gray-300">
-                {isDragOver ? 'Drop your image here!' : 'Upload Concrete Image'}
+                {isDragOver ? 'Перетащите изображение сюда!' : 'Загрузить изображение бетона'}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-6">
-                Drag and drop an image, or click to select
+                Перетащите изображение или нажмите для выбора
               </p>
               
               <Input
@@ -190,7 +190,7 @@ export function ImageUploader() {
                 className="h-12 px-8 text-lg font-semibold shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-200 bg-black/80 dark:bg-white/10 hover:bg-black dark:hover:bg-white/20 rounded-xl"
               >
                 <ArrowUpTrayIcon className="w-6 h-6 mr-3" />
-                Choose File
+                Выбрать файл
               </Button>
             </motion.div>
           ) : (
@@ -265,7 +265,7 @@ export function ImageUploader() {
                         ) : (
                           <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
                         )}
-                        {loading ? 'Analyzing...' : 'Analyze Image'}
+                        {loading ? 'Анализ...' : 'Анализировать изображение'}
                       </Button>
                       
                       <Button
@@ -275,7 +275,7 @@ export function ImageUploader() {
                         className="h-11 px-6 text-base font-medium hover:scale-[1.02] active:scale-95 transition-all duration-200 rounded-xl border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-300"
                       >
                         <PhotoIcon className="w-4 h-4 mr-2" />
-                        Replace
+                        Заменить
                       </Button>
                     </div>
                   </motion.div>
@@ -319,7 +319,7 @@ export function ImageUploader() {
                 transition={{ delay: 0.2, duration: 0.4 }}
                 className="text-lg font-semibold mb-4 text-muted-foreground text-center w-full"
               >
-                Analysis Complete
+                Анализ завершен
               </motion.h3>
               <motion.div
                 initial={{ opacity: 0, scale: 0.5 }}
@@ -367,7 +367,7 @@ export function ImageUploader() {
                 transition={{ delay: 1.0, duration: 0.4 }}
                 className="text-center text-sm text-muted-foreground mt-3"
               >
-                Concrete strength prediction
+                Прогноз прочности бетона
               </motion.p>
             </motion.div>
 
@@ -384,7 +384,7 @@ export function ImageUploader() {
                 transition={{ delay: 0.4, duration: 0.4 }}
                 className="text-lg font-semibold mb-4 text-muted-foreground text-center w-full"
               >
-                Cracks Detection
+                Обнаружение трещин
               </motion.h3>
               <motion.div
                 initial={{ opacity: 0, scale: 0.5 }}
@@ -398,7 +398,7 @@ export function ImageUploader() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.6, duration: 0.4 }}
                 >
-                  {prediction.cracks.has_cracks ? 'Cracks Detected' : 'No Cracks'}
+                  {prediction.cracks.has_cracks ? 'Трещины обнаружены' : 'Трещин нет'}
                 </motion.p>
                 <motion.p 
                   className="text-sm text-muted-foreground mt-2"
@@ -406,7 +406,7 @@ export function ImageUploader() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7, duration: 0.4 }}
                 >
-                  Confidence: {(prediction.cracks.probability * 100).toFixed(1)}%
+                  Уверенность: {(prediction.cracks.probability * 100).toFixed(1)}%
                 </motion.p>
               </motion.div>
             </motion.div>
@@ -424,7 +424,7 @@ export function ImageUploader() {
                 transition={{ delay: 0.5, duration: 0.4 }}
                 className="text-lg font-semibold mb-4 text-muted-foreground text-center w-full"
               >
-                Concrete Type
+                Тип бетона
               </motion.h3>
               <motion.div
                 initial={{ opacity: 0, scale: 0.5 }}
@@ -446,7 +446,7 @@ export function ImageUploader() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.8, duration: 0.4 }}
                 >
-                  Confidence: {(prediction.concrete_type.confidence * 100).toFixed(1)}%
+                  Уверенность: {(prediction.concrete_type.confidence * 100).toFixed(1)}%
                 </motion.p>
               </motion.div>
             </motion.div>

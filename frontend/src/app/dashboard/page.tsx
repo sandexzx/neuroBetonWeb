@@ -15,10 +15,10 @@ export default function DashboardPage() {
         <div className="bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-semibold tracking-tight mb-3 font-sans" style={{letterSpacing: '-0.02em'}}>
-              Welcome to <span className="bg-gradient-to-r from-black via-gray-700 to-gray-400 bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-gray-500">Dashboard</span>
+              Добро пожаловать в <span className="bg-gradient-to-r from-black via-gray-700 to-gray-400 bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-gray-500">Панель управления</span>
             </h1>
             <p className="text-lg text-muted-foreground font-sans">
-              Upload an image to analyze concrete strength
+              Загрузите изображение для анализа прочности бетона
             </p>
           </div>
           <ImageUploader />
