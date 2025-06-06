@@ -34,7 +34,7 @@ class ModelService:
         try:
             # Load config
             logger.info("Loading config...")
-            with open('model/config.yaml', 'r') as f:
+            with open('models/strength/config.yaml', 'r') as f:
                 self.config = yaml.safe_load(f)
                 
             # Initialize transforms
@@ -61,7 +61,7 @@ class ModelService:
                 use_canny=self.config['model']['use_hybrid_features'],  # Используем значение из конфига
                 dropout=self.config['model']['dropout']
             )
-            checkpoint = torch.load('model/best_model.pth', map_location=self.device)  # Используем ту же модель
+            checkpoint = torch.load('models/strength/best_model.pth', map_location=self.device)  # Используем ту же модель
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.model.to(self.device)
             self.model.eval()
