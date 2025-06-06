@@ -102,6 +102,10 @@ async def register(user: User):
 
 @app.post("/login")
 async def login(user: User):
+    # Validate input
+    if not user.username or not user.password:
+        raise HTTPException(status_code=400, detail="Username and password are required")
+    
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT * FROM users WHERE username = ? AND password = ?",
@@ -112,7 +116,7 @@ async def login(user: User):
     if result:
         return {"message": "Login successful", "username": user.username}
     else:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Invalid username or password")
 
 @app.post("/predict", response_model=PredictionResponse)
 async def predict_image(file: UploadFile = File(...), username: str = None):

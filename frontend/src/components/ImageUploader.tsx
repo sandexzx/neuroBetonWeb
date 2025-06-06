@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowUpTrayIcon, XMarkIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { useAuth } from '@/lib/auth';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '@/components/ui/toast';
 
 interface PredictionResult {
   strength: number;
@@ -27,8 +28,29 @@ export function ImageUploader() {
   const [loading, setLoading] = useState(false);
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const { user } = useAuth();
+  const { addToast } = useToast();
 
   const handleFileChange = useCallback((file: File) => {
+    // Валидация типа файла
+    if (!file.type.startsWith('image/')) {
+      addToast({
+        type: 'error',
+        title: 'Invalid file type',
+        description: 'Please select an image file (JPG, PNG, etc.)'
+      });
+      return;
+    }
+    
+    // Валидация размера файла (максимум 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      addToast({
+        type: 'error',
+        title: 'File too large',
+        description: 'Please select an image smaller than 10MB'
+      });
+      return;
+    }
+
     setSelectedFile(file);
     setPrediction(null);
     
@@ -38,7 +60,7 @@ export function ImageUploader() {
       setImagePreview(e.target?.result as string);
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [addToast]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -89,14 +111,24 @@ export function ImageUploader() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to analyze image');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to analyze image');
       }
 
       const data = await response.json();
       setPrediction(data);
-    } catch (error) {
+      addToast({
+        type: 'success',
+        title: 'Analysis complete!',
+        description: `Concrete strength: ${data.strength.toFixed(2)} MPa`
+      });
+    } catch (error: any) {
       console.error('Error:', error);
-      alert('Failed to analyze image. Please try again.');
+      addToast({
+        type: 'error',
+        title: 'Analysis failed',
+        description: error.message || 'Please try again with a different image.'
+      });
     } finally {
       setLoading(false);
     }

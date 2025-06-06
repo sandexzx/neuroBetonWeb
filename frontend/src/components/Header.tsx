@@ -6,10 +6,12 @@ import { useEffect } from "react";
 import { Navigation } from "./Navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
+import { useToast } from "@/components/ui/toast";
 
 export default function Header() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { addToast } = useToast();
 
   useEffect(() => {
     console.log('Current user:', user);
@@ -18,6 +20,11 @@ export default function Header() {
 
   const handleLogout = () => {
     logout();
+    addToast({
+      type: 'info',
+      title: 'Logged out',
+      description: 'You have been successfully logged out.'
+    });
     router.push('/');
   };
 

@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
+import { useToast } from '@/components/ui/toast';
 
 export function History() {
   const [history, setHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { addToast } = useToast();
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -20,11 +22,22 @@ export function History() {
         const response = await fetch(
           `http://localhost:8000/history/${user.username}`
         );
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || 'Failed to load history');
+        }
+        
         const data = await response.json();
         console.log('Received data:', data);
         setHistory(data || []);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching history:', error);
+        addToast({
+          type: 'error',
+          title: 'Failed to load history',
+          description: 'Unable to load your analysis history. Please try again.'
+        });
         setHistory([]);
       } finally {
         setIsLoading(false);
@@ -32,7 +45,7 @@ export function History() {
     };
 
     fetchHistory();
-  }, [user]);
+  }, [user, addToast]);
 
   if (isLoading) {
     return (

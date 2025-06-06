@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { motion } from 'framer-motion';
 import { ArrowRightIcon, UserPlusIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useAuth } from '@/lib/auth';
+import { useToast } from '@/components/ui/toast';
 
 const authSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -27,11 +28,11 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { login, register: registerUser } = useAuth();
+  const { addToast } = useToast();
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
   } = useForm({
     resolver: zodResolver(authSchema),
     defaultValues: {
@@ -45,14 +46,28 @@ export function AuthForm({ mode }: AuthFormProps) {
     try {
       if (mode === 'login') {
         await login(data.username, data.password);
+        addToast({
+          type: 'success',
+          title: 'Login successful!',
+          description: `Welcome back, ${data.username}!`
+        });
       } else {
         await registerUser(data.username, data.password);
+        addToast({
+          type: 'success', 
+          title: 'Account created!',
+          description: 'You can now log in with your credentials.'
+        });
         await login(data.username, data.password);
       }
       router.push('/dashboard');
     } catch (error: any) {
       console.error('Error:', error);
-      setError('root', { message: error.message || 'Authentication failed' });
+      addToast({
+        type: 'error',
+        title: mode === 'login' ? 'Login failed' : 'Registration failed',
+        description: error.message || 'Please check your credentials and try again.'
+      });
     } finally {
       setIsLoading(false);
     }
