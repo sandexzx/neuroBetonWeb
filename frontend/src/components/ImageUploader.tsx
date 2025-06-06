@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import { useAuth } from '@/lib/auth';
+import { motion } from 'framer-motion';
 
 interface PredictionResult {
   strength: number;
@@ -36,6 +37,7 @@ export function ImageUploader() {
     if (!selectedFile || !user) return;
 
     setLoading(true);
+    setPrediction(null);
     const formData = new FormData();
     formData.append('file', selectedFile);
 
@@ -96,42 +98,167 @@ export function ImageUploader() {
             </div>
           </div>
         </div>
+        {selectedFile && (
+          <p className="text-sm text-muted-foreground">
+            Selected file: {selectedFile.name}
+          </p>
+        )}
         {prediction !== null && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ 
+              duration: 0.6, 
+              ease: [0.25, 0.46, 0.45, 0.94],
+              staggerChildren: 0.2
+            }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
             {/* Strength Prediction */}
-            <div className="p-6 bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 rounded-2xl shadow-sm backdrop-blur-sm">
-              <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Strength Prediction</h3>
-              <p className="text-4xl font-bold bg-gradient-to-r from-black via-gray-700 to-gray-400 bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-gray-500">
-                {prediction.strength.toFixed(2)} MPa
-              </p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="p-8 bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 rounded-2xl shadow-sm backdrop-blur-sm border border-white/20 dark:border-white/10 flex flex-col items-center"
+            >
+              <motion.h3 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+                className="text-lg font-semibold mb-4 text-muted-foreground text-center w-full"
+              >
+                Analysis Complete
+              </motion.h3>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ 
+                  delay: 0.4, 
+                  duration: 0.5, 
+                  type: "spring", 
+                  stiffness: 200 
+                }}
+                className="text-center"
+              >
+                <motion.span 
+                  className="text-5xl font-bold bg-gradient-to-r from-black via-gray-700 to-gray-400 bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-gray-500"
+                  initial={{ backgroundPosition: "0% 50%" }}
+                  animate={{ backgroundPosition: "100% 50%" }}
+                  transition={{ 
+                    duration: 2, 
+                    repeat: Infinity, 
+                    repeatType: "reverse",
+                    ease: "easeInOut"
+                  }}
+                  style={{ backgroundSize: "200% 200%" }}
+                >
+                  {prediction.strength.toFixed(2)}
+                </motion.span>
+                <motion.span 
+                  className="text-2xl font-semibold text-muted-foreground ml-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8, duration: 0.3 }}
+                >
+                  MPa
+                </motion.span>
+              </motion.div>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
+                className="h-1 bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 rounded-full mt-4 mx-auto"
+              />
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.0, duration: 0.4 }}
+                className="text-center text-sm text-muted-foreground mt-3"
+              >
+                Concrete strength prediction
+              </motion.p>
+            </motion.div>
 
             {/* Cracks Detection */}
-            <div className="p-6 bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 rounded-2xl shadow-sm backdrop-blur-sm">
-              <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Cracks Detection</h3>
-              <div className="space-y-2">
-                <p className="text-2xl font-bold bg-gradient-to-r from-black via-gray-700 to-gray-400 bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-gray-500">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+              className="p-8 bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 rounded-2xl shadow-sm backdrop-blur-sm border border-white/20 dark:border-white/10 flex flex-col items-center"
+            >
+              <motion.h3 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.4 }}
+                className="text-lg font-semibold mb-4 text-muted-foreground text-center w-full"
+              >
+                Cracks Detection
+              </motion.h3>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="text-center"
+              >
+                <motion.p 
+                  className="text-2xl font-bold bg-gradient-to-r from-black via-gray-700 to-gray-400 bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-gray-500"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6, duration: 0.4 }}
+                >
                   {prediction.cracks.has_cracks ? 'Cracks Detected' : 'No Cracks'}
-                </p>
-                <p className="text-sm text-muted-foreground">
+                </motion.p>
+                <motion.p 
+                  className="text-sm text-muted-foreground mt-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7, duration: 0.4 }}
+                >
                   Confidence: {(prediction.cracks.probability * 100).toFixed(1)}%
-                </p>
-              </div>
-            </div>
+                </motion.p>
+              </motion.div>
+            </motion.div>
 
             {/* Concrete Type */}
-            <div className="p-6 bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 rounded-2xl shadow-sm backdrop-blur-sm">
-              <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Concrete Type</h3>
-              <div className="space-y-2">
-                <p className="text-2xl font-bold bg-gradient-to-r from-black via-gray-700 to-gray-400 bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-gray-500">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.4 }}
+              className="p-8 bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 rounded-2xl shadow-sm backdrop-blur-sm border border-white/20 dark:border-white/10 flex flex-col items-center"
+            >
+              <motion.h3 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.4 }}
+                className="text-lg font-semibold mb-4 text-muted-foreground text-center w-full"
+              >
+                Concrete Type
+              </motion.h3>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+                className="text-center"
+              >
+                <motion.p 
+                  className="text-2xl font-bold bg-gradient-to-r from-black via-gray-700 to-gray-400 bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-gray-500"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7, duration: 0.4 }}
+                >
                   {prediction.concrete_type.type}
-                </p>
-                <p className="text-sm text-muted-foreground">
+                </motion.p>
+                <motion.p 
+                  className="text-sm text-muted-foreground mt-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8, duration: 0.4 }}
+                >
                   Confidence: {(prediction.concrete_type.confidence * 100).toFixed(1)}%
-                </p>
-              </div>
-            </div>
-          </div>
+                </motion.p>
+              </motion.div>
+            </motion.div>
+          </motion.div>
         )}
       </div>
     </div>
