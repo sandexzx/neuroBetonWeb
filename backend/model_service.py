@@ -7,7 +7,6 @@ import numpy as np
 import yaml
 import pickle
 import logging
-from models.cracks_model import CracksRecognitionModel
 from models.classification_model import ClassificationModel
 from models.mobilenet_regressor import MobileNetRegressor
 import torch.nn.functional as F
@@ -72,14 +71,22 @@ class ModelService:
             
             # Инициализация модели определения трещин
             self.cracks_model = ClassificationModel(num_classes=2)
-            self.cracks_model.load_state_dict(torch.load('models/cracks/best_cracks_detection_model.pt'))
+            checkpoint = torch.load('models/cracks/best_cracks_detection_model.pt')
+            if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+                self.cracks_model.load_state_dict(checkpoint['model_state_dict'])
+            else:
+                self.cracks_model.load_state_dict(checkpoint)
             self.cracks_model.to(self.device)
             self.cracks_model.eval()
             self.logger.info("Модель определения трещин успешно инициализирована")
             
             # Инициализация модели классификации типа бетона
             self.classification_model = ClassificationModel(num_classes=5)
-            self.classification_model.load_state_dict(torch.load('models/classification/best_concrete_type_classification_model.pt'))
+            checkpoint = torch.load('models/classification/best_concrete_type_classification_model.pt')
+            if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+                self.classification_model.load_state_dict(checkpoint['model_state_dict'])
+            else:
+                self.classification_model.load_state_dict(checkpoint)
             self.classification_model.to(self.device)
             self.classification_model.eval()
             self.logger.info("Модель классификации типа бетона успешно инициализирована")
@@ -151,13 +158,17 @@ class ModelService:
             image = Image.open(image_path).convert('RGB')
             image_tensor = self.transform(image).unsqueeze(0)  # [1, 3, H, W]
             image_tensor = image_tensor.to(self.device)
+            logger.info(f"Image tensor shape: {image_tensor.shape}")
             
             # Делаем предсказание
             with torch.no_grad():
                 prediction = self.cracks_model(image_tensor)
-                logger.info(f"Raw prediction: {prediction.cpu().numpy()}")
+                logger.info(f"Raw prediction shape: {prediction.shape}")
+                logger.info(f"Raw prediction values: {prediction.cpu().numpy()}")
                 # Применяем softmax для получения вероятностей
                 probabilities = F.softmax(prediction, dim=1)
+                logger.info(f"Probabilities shape: {probabilities.shape}")
+                logger.info(f"Probabilities values: {probabilities.cpu().numpy()}")
                 # Получаем предсказанный класс и вероятность
                 predicted_class = torch.argmax(probabilities, dim=1).item()
                 crack_probability = probabilities[0][0].item()  # вероятность класса "есть трещина"
