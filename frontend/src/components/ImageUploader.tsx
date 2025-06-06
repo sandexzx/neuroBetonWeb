@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
+import { ArrowUpTrayIcon, XMarkIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { useAuth } from '@/lib/auth';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PredictionResult {
   strength: number;
@@ -22,16 +22,57 @@ interface PredictionResult {
 
 export function ImageUploader() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const { user } = useAuth();
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback((file: File) => {
+    setSelectedFile(file);
+    setPrediction(null);
+    
+    // Создаем превью изображения
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setSelectedFile(event.target.files[0]);
-      setPrediction(null);
+      handleFileChange(event.target.files[0]);
     }
   };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+    
+    if (imageFile) {
+      handleFileChange(imageFile);
+    }
+  }, [handleFileChange]);
+
+  const removeImage = useCallback(() => {
+    setSelectedFile(null);
+    setImagePreview(null);
+    setPrediction(null);
+  }, []);
 
   const handleSubmit = async () => {
     if (!selectedFile || !user) return;
@@ -64,45 +105,164 @@ export function ImageUploader() {
   return (
     <div className="w-full">
       <div className="space-y-8">
-        <div className="flex flex-col space-y-4">
-          <div className="relative">
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  disabled={loading}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="flex items-center justify-center h-10 px-6 text-base font-semibold shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200 bg-black/80 dark:bg-white/10 hover:bg-black dark:hover:bg-white/20 rounded-lg cursor-pointer"
-                >
-                  {selectedFile ? selectedFile.name : 'Choose File'}
-                </label>
-              </div>
-              <Button
-                onClick={handleSubmit}
-                disabled={!selectedFile || loading || !user}
-                className="h-10 px-6 text-base font-semibold shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200 bg-black/80 dark:bg-white/10 hover:bg-black dark:hover:bg-white/20 rounded-lg"
+        {/* Зона загрузки файлов */}
+        <AnimatePresence mode="wait">
+          {!imagePreview ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className={`
+                relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300
+                ${isDragOver 
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 scale-[1.02]' 
+                  : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                }
+                ${loading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              `}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => !loading && document.getElementById('file-upload')?.click()}
+            >
+              <motion.div
+                animate={{ 
+                  y: isDragOver ? -5 : 0,
+                  scale: isDragOver ? 1.1 : 1 
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
-                {loading ? 'Processing...' : (
-                  <>
-                    <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
-                    Analyze
-                  </>
-                )}
+                <PhotoIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+              </motion.div>
+              
+              <h3 className="text-xl font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                {isDragOver ? 'Drop your image here!' : 'Upload Concrete Image'}
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
+                Drag and drop an image, or click to select
+              </p>
+              
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleInputChange}
+                disabled={loading}
+                className="hidden"
+                id="file-upload"
+              />
+              
+              <Button
+                type="button"
+                disabled={loading}
+                className="h-12 px-8 text-lg font-semibold shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-200 bg-black/80 dark:bg-white/10 hover:bg-black dark:hover:bg-white/20 rounded-xl"
+              >
+                <ArrowUpTrayIcon className="w-6 h-6 mr-3" />
+                Choose File
               </Button>
-            </div>
-          </div>
-        </div>
-        {selectedFile && (
-          <p className="text-sm text-muted-foreground">
-            Selected file: {selectedFile.name}
-          </p>
-        )}
+            </motion.div>
+          ) : (
+            /* Превью загруженного изображения */
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="relative"
+            >
+              <div className="relative bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-700">
+                <div className="flex items-start gap-6">
+                  {/* Превью изображения */}
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.1 }}
+                    className="relative flex-shrink-0"
+                  >
+                    <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-xl overflow-hidden shadow-lg">
+                      <img
+                        src={imagePreview}
+                        alt="Uploaded concrete sample"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                    </div>
+                    
+                    {/* Кнопка удаления - более деликатная */}
+                    <motion.button
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 0.7 }}
+                      whileHover={{ opacity: 1, scale: 1.1 }}
+                      transition={{ delay: 0.3, type: "spring", stiffness: 300 }}
+                      onClick={removeImage}
+                      className="absolute -top-2 -right-2 w-7 h-7 bg-gray-800/80 dark:bg-gray-200/80 text-white dark:text-gray-800 rounded-full shadow-md backdrop-blur-sm hover:bg-gray-900/90 dark:hover:bg-gray-100/90 transition-all duration-200 flex items-center justify-center"
+                    >
+                      <XMarkIcon className="w-3.5 h-3.5" />
+                    </motion.button>
+                  </motion.div>
+
+                  {/* Информация о файле */}
+                  <motion.div
+                    initial={{ x: 20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                    className="flex-1 min-w-0"
+                  >
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                        {selectedFile?.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {selectedFile && `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`}
+                      </p>
+                    </div>
+
+                    {/* Кнопки действий */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        onClick={handleSubmit}
+                        disabled={loading || !user}
+                        className="flex-1 h-11 text-base font-semibold shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 rounded-xl"
+                      >
+                        {loading ? (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            className="w-5 h-5 border-2 border-white border-t-transparent rounded-full mr-2"
+                          />
+                        ) : (
+                          <ArrowUpTrayIcon className="w-5 h-5 mr-2" />
+                        )}
+                        {loading ? 'Analyzing...' : 'Analyze Image'}
+                      </Button>
+                      
+                      <Button
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                        variant="outline"
+                        disabled={loading}
+                        className="h-11 px-6 text-base font-medium hover:scale-[1.02] active:scale-95 transition-all duration-200 rounded-xl border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-600 dark:text-gray-300"
+                      >
+                        <PhotoIcon className="w-4 h-4 mr-2" />
+                        Replace
+                      </Button>
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+              
+              {/* Скрытый input для смены файла */}
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleInputChange}
+                disabled={loading}
+                className="hidden"
+                id="file-upload"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {prediction !== null && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8, y: 30 }}
