@@ -143,7 +143,7 @@ async def predict_image(file: UploadFile = File(...), username: str = None):
     
     try:
         # Получаем предсказания от всех моделей
-        strength = model_service.predict_strength(file_path)
+        strength = float(model_service.predict_strength(file_path))  # Ensure it's a float
         cracks = model_service.predict_cracks(file_path)
         concrete_type = model_service.predict_concrete_type(file_path)
         
@@ -186,6 +186,7 @@ async def predict_image(file: UploadFile = File(...), username: str = None):
 
 @app.get("/history/{username}")
 async def get_prediction_history(username: str):
+    logger.info(f"Fetching history for user: {username}")
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''
@@ -196,18 +197,47 @@ async def get_prediction_history(username: str):
         ORDER BY timestamp DESC
     ''', (username,))
     results = c.fetchall()
+    logger.info(f"Found {len(results)} records in database")
     conn.close()
     
-    return [{
-        "filename": r[0],
-        "strength": r[1],
-        "cracks": {
-            "has_cracks": bool(r[2]),
-            "probability": r[3]
-        },
-        "concrete_type": {
-            "type": r[4],
-            "confidence": r[5]
-        },
-        "timestamp": r[6]
-    } for r in results]
+    history = []
+    for r in results:
+        try:
+            logger.info(f"Processing record: {r}")
+            # Try to convert strength_prediction to float, handling both string and binary data
+            try:
+                strength = float(r[1])
+                logger.info(f"Successfully converted strength to float: {strength}")
+            except (ValueError, TypeError) as e:
+                logger.error(f"Error converting strength: {e}, value type: {type(r[1])}, value: {r[1]}")
+                # If it's binary data, try to decode it first
+                if isinstance(r[1], bytes):
+                    try:
+                        strength = float(r[1].decode('utf-8'))
+                        logger.info(f"Successfully decoded bytes and converted to float: {strength}")
+                    except Exception as e:
+                        logger.error(f"Error decoding bytes: {e}")
+                        strength = 0.0
+                else:
+                    strength = 0.0  # Default value if conversion fails
+            
+            history.append({
+                "filename": str(r[0]),
+                "strength": strength,
+                "cracks": {
+                    "has_cracks": bool(r[2]),
+                    "probability": float(r[3])
+                },
+                "concrete_type": {
+                    "type": str(r[4]),
+                    "confidence": float(r[5])
+                },
+                "timestamp": str(r[6])
+            })
+            logger.info(f"Successfully processed record")
+        except Exception as e:
+            logger.error(f"Error processing history record: {e}")
+            continue
+    
+    logger.info(f"Returning {len(history)} processed records")
+    return history

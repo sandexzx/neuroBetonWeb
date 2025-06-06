@@ -3,27 +3,26 @@
 import { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/lib/auth';
 
 export function History() {
   const [history, setHistory] = useState<any[]>([]);
-  const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setUsername(localStorage.getItem('username') || '');
-  }, []);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchHistory = async () => {
-      if (!username) return;
+      if (!user?.username) return;
       
       setIsLoading(true);
       try {
+        console.log('Fetching history for user:', user.username);
         const response = await fetch(
-          `http://localhost:8000/api/history?username=${username}`
+          `http://localhost:8000/history/${user.username}`
         );
         const data = await response.json();
-        setHistory(data.history || []);
+        console.log('Received data:', data);
+        setHistory(data || []);
       } catch (error) {
         console.error('Error fetching history:', error);
         setHistory([]);
@@ -33,7 +32,7 @@ export function History() {
     };
 
     fetchHistory();
-  }, [username]);
+  }, [user]);
 
   if (isLoading) {
     return (
@@ -52,41 +51,43 @@ export function History() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="overflow-hidden rounded-xl bg-gradient-to-br from-black/5 to-black/10 dark:from-white/5 dark:to-white/10 backdrop-blur-sm"
-    >
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-b border-black/10 dark:border-white/10">
-              <TableHead className="text-base font-semibold text-muted-foreground">Filename</TableHead>
-              <TableHead className="text-base font-semibold text-muted-foreground">Strength Prediction</TableHead>
-              <TableHead className="text-base font-semibold text-muted-foreground">Timestamp</TableHead>
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Image</TableHead>
+            <TableHead>Strength</TableHead>
+            <TableHead>Cracks</TableHead>
+            <TableHead>Concrete Type</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {history.map((item, index) => (
+            <TableRow key={index}>
+              <TableCell>{new Date(item.date).toLocaleString()}</TableCell>
+              <TableCell>
+                <img 
+                  src={item.image_url} 
+                  alt="Concrete sample" 
+                  className="w-20 h-20 object-cover rounded-lg"
+                />
+              </TableCell>
+              <TableCell>{item.strength} MPa</TableCell>
+              <TableCell>
+                {item.cracks.has_cracks ? (
+                  <span className="text-destructive">Yes ({Math.round(item.cracks.probability * 100)}%)</span>
+                ) : (
+                  <span className="text-green-600">No</span>
+                )}
+              </TableCell>
+              <TableCell>
+                {item.concrete_type.type} ({Math.round(item.concrete_type.confidence * 100)}%)
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {history.map((item, index) => (
-              <TableRow 
-                key={index}
-                className="border-b border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-200"
-              >
-                <TableCell className="text-base">{item.filename}</TableCell>
-                <TableCell className="text-base">
-                  <span className="font-semibold bg-gradient-to-r from-black via-gray-700 to-gray-400 bg-clip-text text-transparent dark:from-white dark:via-gray-300 dark:to-gray-500">
-                    {item.strength_prediction} MPa
-                  </span>
-                </TableCell>
-                <TableCell className="text-base text-muted-foreground">
-                  {new Date(item.timestamp).toLocaleString()}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </motion.div>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
