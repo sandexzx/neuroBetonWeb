@@ -52,6 +52,55 @@ if errorlevel 1 (
 echo Frontend dependencies installed.
 cd ..
 
+:: Распределение моделей из архива
+echo Distributing models from archive...
+if not exist "modelArchive" (
+    echo Model archive not found!
+    pause
+    exit /b 1
+)
+
+:: Создаем базовую директорию для моделей если её нет
+if not exist "backend\models" mkdir "backend\models"
+
+:: Создаем необходимые директории для каждой модели
+if not exist "backend\models\strength" mkdir "backend\models\strength"
+if not exist "backend\models\classification" mkdir "backend\models\classification"
+if not exist "backend\models\cracks" mkdir "backend\models\cracks"
+
+:: Проверяем наличие каждой модели в архиве и копируем их
+if exist "modelArchive\best_model.pth" (
+    copy "modelArchive\best_model.pth" "backend\models\strength\" /Y
+    echo Copied strength model
+) else (
+    echo Warning: strength model not found in archive
+)
+
+if exist "modelArchive\best_ClassificationModel_model.pt" (
+    copy "modelArchive\best_ClassificationModel_model.pt" "backend\models\classification\" /Y
+    echo Copied classification model
+) else (
+    echo Warning: classification model not found in archive
+)
+
+if exist "modelArchive\label_mapping.pkl" (
+    copy "modelArchive\label_mapping.pkl" "backend\models\classification\" /Y
+    echo Copied classification label mapping
+) else (
+    echo Warning: classification label mapping not found in archive
+)
+
+if exist "modelArchive\best_CracksRecognitionModel_model.pt" (
+    copy "modelArchive\best_CracksRecognitionModel_model.pt" "backend\models\cracks\" /Y
+    echo Copied cracks model
+) else (
+    echo Warning: cracks model not found in archive
+)
+
+:: Удаляем архив после копирования
+rmdir /S /Q "modelArchive"
+echo Models distributed successfully.
+
 echo.
 echo Installation complete!
 echo Run start.bat to launch the application.

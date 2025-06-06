@@ -149,6 +149,58 @@ wait_for_servers() {
     done
 }
 
+# Функция для распределения моделей
+distribute_models() {
+    echo -e "${BLUE}📦 Распределяем модели из архива...${NC}"
+    
+    if [ ! -d "modelArchive" ]; then
+        echo -e "${RED}❌ Архив моделей не найден!${NC}"
+        exit 1
+    fi
+    
+    # Создаем базовую директорию для моделей если её нет
+    mkdir -p backend/models
+    
+    # Создаем необходимые директории для каждой модели
+    mkdir -p backend/models/strength
+    mkdir -p backend/models/classification
+    mkdir -p backend/models/cracks
+    
+    # Проверяем наличие каждой модели в архиве и копируем их
+    if [ -f "modelArchive/best_model.pth" ]; then
+        cp modelArchive/best_model.pth backend/models/strength/
+        echo -e "${GREEN}✅ Скопирована модель прочности${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Модель прочности не найдена в архиве${NC}"
+    fi
+    
+    if [ -f "modelArchive/best_ClassificationModel_model.pt" ]; then
+        cp modelArchive/best_ClassificationModel_model.pt backend/models/classification/
+        echo -e "${GREEN}✅ Скопирована модель классификации${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Модель классификации не найдена в архиве${NC}"
+    fi
+    
+    if [ -f "modelArchive/label_mapping.pkl" ]; then
+        cp modelArchive/label_mapping.pkl backend/models/classification/
+        echo -e "${GREEN}✅ Скопировано маппинг меток классификации${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Маппинг меток классификации не найден в архиве${NC}"
+    fi
+    
+    if [ -f "modelArchive/best_CracksRecognitionModel_model.pt" ]; then
+        cp modelArchive/best_CracksRecognitionModel_model.pt backend/models/cracks/
+        echo -e "${GREEN}✅ Скопирована модель трещин${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Модель трещин не найдена в архиве${NC}"
+    fi
+    
+    # Удаляем архив после копирования
+    rm -rf modelArchive
+    
+    echo -e "${GREEN}✅ Модели успешно распределены${NC}"
+}
+
 # Основная функция
 main() {
     # Очищаем экран и показываем лого
@@ -165,6 +217,7 @@ main() {
             setup_venv
             install_backend_deps
             install_frontend_deps
+            distribute_models
             echo -e "${GREEN}🎉 Все зависимости установлены! Теперь запустите: ./start.sh${NC}"
             exit 0
             ;;
@@ -185,6 +238,11 @@ main() {
         echo -e "${YELLOW}⚠️  Виртуальное окружение не найдено${NC}"
         echo -e "${BLUE}💡 Запустите: ./start.sh --install-deps для установки зависимостей${NC}"
         exit 1
+    fi
+    
+    # Распределяем модели если архив существует
+    if [ -d "modelArchive" ]; then
+        distribute_models
     fi
     
     # Запускаем серверы
