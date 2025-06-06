@@ -11,6 +11,8 @@ from models.cracks_model import CracksRecognitionModel
 from models.classification_model import ClassificationModel
 from models.mobilenet_regressor import MobileNetRegressor
 import torch.nn.functional as F
+import os
+from datetime import datetime
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -18,83 +20,72 @@ logger = logging.getLogger(__name__)
 
 class ModelService:
     def __init__(self):
-        self.initialized = False
-        self.model = None
-        self.crack_model = None
-        self.classification_model = None
-        self.transform = None
-        self.config = None
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.label_mapping = None
+        self.logger = logging.getLogger(__name__)
         
-    def initialize(self):
-        if self.initialized:
-            return
-            
+        # Определяем устройство для вычислений
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.logger.info(f"Используется устройство: {self.device}")
+        
+        # Инициализация моделей
+        self.strength_model = None
+        self.cracks_model = None
+        self.classification_model = None
+        
+        # Загрузка конфигурации
+        self.config = {
+            'data': {
+                'image_size': 224  # Стандартный размер для MobileNet
+            }
+        }
+        
+        # Преобразования для изображений
+        self.transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        
+        # Маппинг для классификации типа бетона
+        self.label_mapping = {
+            0: 'Бетон Тяжелый В 15',
+            1: 'Бетон Тяжелый В 40',
+            2: 'Бетон Тяжелый В 30',
+            3: 'Бетон Тяжелый В 35',
+            4: 'Бетон Тяжелый В 25'
+        }
+        
+        # Инициализация моделей
+        self._initialize_models()
+    
+    def _initialize_models(self):
         try:
-            # Load config
-            logger.info("Loading config...")
-            with open('models/strength/config.yaml', 'r') as f:
-                self.config = yaml.safe_load(f)
-                
-            # Initialize transforms
-            logger.info("Initializing transforms...")
-            self.transform = transforms.Compose([
-                transforms.Resize((224, 224)),  # Используем тот же размер, что и в imageprocessingserver
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])
-            
-            # Load label mapping for concrete type classification
-            logger.info("Loading label mapping...")
-            with open('models/classification/label_mapping.pkl', 'rb') as f:
-                loaded_mapping = pickle.load(f)
-            # Создаем обратный маппинг (индекс -> название класса)
-            self.label_mapping = {idx: label for label, idx in loaded_mapping.items()}
-            logger.info(f"Loaded label mapping: {self.label_mapping}")
-            
-            # Initialize strength prediction model
-            logger.info("Initializing strength prediction model...")
-            self.model = MobileNetRegressor(
-                backbone=self.config['model']['backbone'],
-                pretrained=False,
-                use_canny=self.config['model']['use_hybrid_features'],  # Используем значение из конфига
-                dropout=self.config['model']['dropout']
-            )
-            checkpoint = torch.load('models/strength/best_model.pth', map_location=self.device)  # Используем ту же модель
-            self.model.load_state_dict(checkpoint['model_state_dict'])
-            self.model.to(self.device)
-            self.model.eval()
-            logger.info("Strength prediction model initialized successfully")
-            
-            # Initialize crack detection model
-            logger.info("Initializing crack detection model...")
-            self.crack_model = ClassificationModel(num_classes=2)
-            self.crack_model.load_state_dict(torch.load('../../concrete_type_classification/checkpoints/cracks/best_ClassificationModel_model.pt', map_location=self.device))
-            self.crack_model.to(self.device)
-            self.crack_model.eval()
-            logger.info("Crack detection model initialized successfully")
-            
-            # Initialize concrete type classification model
-            logger.info("Initializing classification model...")
-            self.classification_model = ClassificationModel(num_classes=len(self.label_mapping))
-            checkpoint = torch.load('models/classification/best_ClassificationModel_model.pt', map_location=self.device)
-            logger.info(f"Classification model checkpoint keys: {checkpoint.keys() if isinstance(checkpoint, dict) else 'Not a dict'}")
+            # Инициализация модели прочности
+            self.strength_model = MobileNetRegressor()
+            checkpoint = torch.load('models/strength/best_strength_prediction_model.pt')
             if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-                logger.info("Loading model_state_dict from checkpoint")
-                self.classification_model.load_state_dict(checkpoint['model_state_dict'])
+                self.strength_model.load_state_dict(checkpoint['model_state_dict'])
             else:
-                logger.info("Loading checkpoint directly as state_dict")
-                self.classification_model.load_state_dict(checkpoint)
+                self.strength_model.load_state_dict(checkpoint)
+            self.strength_model.to(self.device)
+            self.strength_model.eval()
+            self.logger.info("Модель прочности успешно инициализирована")
+            
+            # Инициализация модели определения трещин
+            self.cracks_model = ClassificationModel(num_classes=2)
+            self.cracks_model.load_state_dict(torch.load('models/cracks/best_cracks_detection_model.pt'))
+            self.cracks_model.to(self.device)
+            self.cracks_model.eval()
+            self.logger.info("Модель определения трещин успешно инициализирована")
+            
+            # Инициализация модели классификации типа бетона
+            self.classification_model = ClassificationModel(num_classes=5)
+            self.classification_model.load_state_dict(torch.load('models/classification/best_concrete_type_classification_model.pt'))
             self.classification_model.to(self.device)
             self.classification_model.eval()
-            logger.info("Classification model initialized successfully")
-            
-            self.initialized = True
-            logger.info("All models initialized successfully")
+            self.logger.info("Модель классификации типа бетона успешно инициализирована")
             
         except Exception as e:
-            logger.error(f"Error during initialization: {str(e)}")
+            self.logger.error(f"Ошибка при инициализации моделей: {str(e)}")
             raise
     
     def get_canny_edges(self, image_path, size):
@@ -121,8 +112,8 @@ class ModelService:
         return edges
     
     def predict_strength(self, image_path):
-        if not self.initialized:
-            self.initialize()
+        if not self.strength_model:
+            self._initialize_models()
             
         try:
             logger.info("Predicting strength...")
@@ -132,12 +123,12 @@ class ModelService:
             image_tensor = image_tensor.to(self.device)
             
             # Получаем Canny edges
-            canny_edges = self.get_canny_edges(image_path, self.config['data']['image_size'])
+            canny_edges = self.get_canny_edges(image_path, 224)  # Используем фиксированный размер
             canny_edges = canny_edges.to(self.device)
             
             # Делаем предсказание
             with torch.no_grad():
-                prediction = self.model(image_tensor, canny_edges)
+                prediction = self.strength_model(image_tensor, canny_edges)
                 logger.info(f"Raw prediction: {prediction.cpu().numpy()}")
                 
             # Модель уже выдает значения в МПа
@@ -151,8 +142,8 @@ class ModelService:
             raise
     
     def predict_cracks(self, image_path):
-        if not self.initialized:
-            self.initialize()
+        if not self.cracks_model:
+            self._initialize_models()
             
         try:
             logger.info("Predicting cracks...")
@@ -163,16 +154,19 @@ class ModelService:
             
             # Делаем предсказание
             with torch.no_grad():
-                prediction = self.crack_model(image_tensor)
+                prediction = self.cracks_model(image_tensor)
                 logger.info(f"Raw prediction: {prediction.cpu().numpy()}")
-                # Получаем предсказанный класс
-                predicted_class = torch.argmax(prediction, dim=1).item()
-                logger.info(f"Predicted class: {predicted_class}")
+                # Применяем softmax для получения вероятностей
+                probabilities = F.softmax(prediction, dim=1)
+                # Получаем предсказанный класс и вероятность
+                predicted_class = torch.argmax(probabilities, dim=1).item()
+                crack_probability = probabilities[0][0].item()  # вероятность класса "есть трещина"
+                logger.info(f"Predicted class: {predicted_class}, Probability: {crack_probability}")
                 
-            # Используем только предсказанный класс, как в imageprocessingserver
+            # 0 - есть трещина, 1 - нет трещины
             result = {
-                'has_cracks': predicted_class == 0,  # 0 - есть трещина, 1 - нет трещины
-                'crack_probability': 1.0 if predicted_class == 0 else 0.0  # Для совместимости с интерфейсом
+                'has_cracks': predicted_class == 0,
+                'crack_probability': crack_probability
             }
             logger.info(f"Final result: {result}")
             return result
@@ -182,8 +176,8 @@ class ModelService:
             raise
     
     def predict_concrete_type(self, image_path):
-        if not self.initialized:
-            self.initialize()
+        if not self.classification_model:
+            self._initialize_models()
             
         try:
             logger.info("Predicting concrete type...")

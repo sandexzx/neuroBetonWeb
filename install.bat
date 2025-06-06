@@ -69,18 +69,18 @@ if not exist "backend\models\classification" mkdir "backend\models\classificatio
 if not exist "backend\models\cracks" mkdir "backend\models\cracks"
 
 :: Проверяем наличие каждой модели в архиве и копируем их
-if exist "modelArchive\best_model.pth" (
-    copy "modelArchive\best_model.pth" "backend\models\strength\" /Y
-    echo Copied strength model
+if exist "modelArchive\best_strength_prediction_model.pt" (
+    copy "modelArchive\best_strength_prediction_model.pt" "backend\models\strength\" /Y
+    echo Copied strength prediction model
 ) else (
-    echo Warning: strength model not found in archive
+    echo Warning: strength prediction model not found in archive
 )
 
-if exist "modelArchive\best_ClassificationModel_model.pt" (
-    copy "modelArchive\best_ClassificationModel_model.pt" "backend\models\classification\" /Y
-    echo Copied classification model
+if exist "modelArchive\best_concrete_type_classification_model.pt" (
+    copy "modelArchive\best_concrete_type_classification_model.pt" "backend\models\classification\" /Y
+    echo Copied concrete type classification model
 ) else (
-    echo Warning: classification model not found in archive
+    echo Warning: concrete type classification model not found in archive
 )
 
 if exist "modelArchive\label_mapping.pkl" (
@@ -90,11 +90,11 @@ if exist "modelArchive\label_mapping.pkl" (
     echo Warning: classification label mapping not found in archive
 )
 
-if exist "modelArchive\best_CracksRecognitionModel_model.pt" (
-    copy "modelArchive\best_CracksRecognitionModel_model.pt" "backend\models\cracks\" /Y
-    echo Copied cracks model
+if exist "modelArchive\best_cracks_detection_model.pt" (
+    copy "modelArchive\best_cracks_detection_model.pt" "backend\models\cracks\" /Y
+    echo Copied cracks detection model
 ) else (
-    echo Warning: cracks model not found in archive
+    echo Warning: cracks detection model not found in archive
 )
 
 :: Удаляем архив после копирования

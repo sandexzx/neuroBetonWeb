@@ -167,18 +167,18 @@ distribute_models() {
     mkdir -p backend/models/cracks
     
     # Проверяем наличие каждой модели в архиве и копируем их
-    if [ -f "modelArchive/best_model.pth" ]; then
-        cp modelArchive/best_model.pth backend/models/strength/
+    if [ -f "modelArchive/best_strength_prediction_model.pt" ]; then
+        cp modelArchive/best_strength_prediction_model.pt backend/models/strength/
         echo -e "${GREEN}✅ Скопирована модель прочности${NC}"
     else
         echo -e "${YELLOW}⚠️  Модель прочности не найдена в архиве${NC}"
     fi
     
-    if [ -f "modelArchive/best_ClassificationModel_model.pt" ]; then
-        cp modelArchive/best_ClassificationModel_model.pt backend/models/classification/
-        echo -e "${GREEN}✅ Скопирована модель классификации${NC}"
+    if [ -f "modelArchive/best_concrete_type_classification_model.pt" ]; then
+        cp modelArchive/best_concrete_type_classification_model.pt backend/models/classification/
+        echo -e "${GREEN}✅ Скопирована модель классификации типа бетона${NC}"
     else
-        echo -e "${YELLOW}⚠️  Модель классификации не найдена в архиве${NC}"
+        echo -e "${YELLOW}⚠️  Модель классификации типа бетона не найдена в архиве${NC}"
     fi
     
     if [ -f "modelArchive/label_mapping.pkl" ]; then
@@ -188,11 +188,11 @@ distribute_models() {
         echo -e "${YELLOW}⚠️  Маппинг меток классификации не найден в архиве${NC}"
     fi
     
-    if [ -f "modelArchive/best_CracksRecognitionModel_model.pt" ]; then
-        cp modelArchive/best_CracksRecognitionModel_model.pt backend/models/cracks/
-        echo -e "${GREEN}✅ Скопирована модель трещин${NC}"
+    if [ -f "modelArchive/best_cracks_detection_model.pt" ]; then
+        cp modelArchive/best_cracks_detection_model.pt backend/models/cracks/
+        echo -e "${GREEN}✅ Скопирована модель определения трещин${NC}"
     else
-        echo -e "${YELLOW}⚠️  Модель трещин не найдена в архиве${NC}"
+        echo -e "${YELLOW}⚠️  Модель определения трещин не найдена в архиве${NC}"
     fi
     
     # Удаляем архив после копирования
