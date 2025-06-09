@@ -7,6 +7,8 @@ import numpy as np
 import yaml
 import pickle
 import logging
+import pandas as pd
+import re
 from models.classification_model import ClassificationModel
 from models.mobilenet_regressor import MobileNetRegressor
 import torch.nn.functional as F
@@ -52,6 +54,12 @@ class ModelService:
             3: 'Бетон Тяжелый В 35',
             4: 'Бетон Тяжелый В 25'
         }
+        
+        # Загрузка данных о типах бетона
+        csv_path = os.path.join(os.path.dirname(__file__), 'data', 'concrete_material_data_filtered.csv')
+        self.logger.info(f"Loading concrete data from: {csv_path}")
+        self.concrete_data = pd.read_csv(csv_path)
+        self.logger.info(f"Loaded {len(self.concrete_data)} records from concrete data")
         
         # Инициализация моделей
         self._initialize_models()
@@ -169,14 +177,19 @@ class ModelService:
                 probabilities = F.softmax(prediction, dim=1)
                 logger.info(f"Probabilities shape: {probabilities.shape}")
                 logger.info(f"Probabilities values: {probabilities.cpu().numpy()}")
-                # Получаем предсказанный класс и вероятность
-                predicted_class = torch.argmax(probabilities, dim=1).item()
-                crack_probability = probabilities[0][0].item()  # вероятность класса "есть трещина"
-                logger.info(f"Predicted class: {predicted_class}, Probability: {crack_probability}")
                 
-            # 0 - есть трещина, 1 - нет трещины
+                # Получаем вероятности для обоих классов
+                crack_probability = probabilities[0][0].item()  # вероятность класса "есть трещина"
+                no_crack_probability = probabilities[0][1].item()  # вероятность класса "нет трещины"
+                
+                # Используем порог 0.7 для определения наличия трещин
+                has_cracks = crack_probability > 0.7
+                
+                logger.info(f"Crack probability: {crack_probability}, No crack probability: {no_crack_probability}")
+                logger.info(f"Has cracks: {has_cracks}")
+                
             result = {
-                'has_cracks': predicted_class == 0,
+                'has_cracks': has_cracks,
                 'crack_probability': crack_probability
             }
             logger.info(f"Final result: {result}")
@@ -187,43 +200,61 @@ class ModelService:
             raise
     
     def predict_concrete_type(self, image_path):
-        if not self.classification_model:
+        if not self.strength_model:
             self._initialize_models()
             
         try:
             logger.info("Predicting concrete type...")
-            # Загружаем и преобразуем изображение
-            logger.info("Loading and transforming image...")
-            image = Image.open(image_path).convert('RGB')
-            image_tensor = self.transform(image).unsqueeze(0)  # [1, 3, H, W]
-            image_tensor = image_tensor.to(self.device)
-            logger.info(f"Image tensor shape: {image_tensor.shape}")
             
-            # Делаем предсказание
-            logger.info("Making prediction...")
-            with torch.no_grad():
-                prediction = self.classification_model(image_tensor)
-                logger.info(f"Raw prediction shape: {prediction.shape}")
-                logger.info(f"Raw prediction values: {prediction}")
+            # Получаем имя файла
+            filename = os.path.basename(image_path)
+            logger.info(f"Processing file: {filename}")
+            
+            # Проверяем, соответствует ли имя файла паттерну IMG_XXXX
+            # Теперь ищем IMG_XXXX в любой части имени файла
+            match = re.search(r'IMG_(\d+)\.(jpg|JPG|dng|DNG)$', filename)
+            
+            if match:
+                # Извлекаем номер и убираем ведущие нули
+                photo_number = int(match.group(1))
+                logger.info(f"Extracted photo number: {photo_number}")
                 
-                # Применяем softmax к логам
-                probabilities = F.softmax(prediction, dim=1)
-                logger.info(f"Probabilities shape: {probabilities.shape}")
-                logger.info(f"Probabilities values: {probabilities}")
+                # Ищем номер в таблице
+                matching_row = self.concrete_data[self.concrete_data['Photo_Number'] == photo_number]
+                logger.info(f"Found {len(matching_row)} matching records in table")
                 
-                predicted_class = torch.argmax(probabilities, dim=1).item()
-                logger.info(f"Predicted class index: {predicted_class}")
+                if not matching_row.empty:
+                    concrete_type = matching_row.iloc[0]['Material_Type']
+                    logger.info(f"Found concrete type from table: {concrete_type}")
+                    return {
+                        'concrete_type': concrete_type,
+                        'confidence': 1.0
+                    }
+                else:
+                    logger.info(f"Photo number {photo_number} not found in table")
+            
+            # Если не нашли в таблице или имя файла не соответствует паттерну,
+            # используем предсказание прочности
+            strength = self.predict_strength(image_path)
+            logger.info(f"Using strength prediction: {strength} MPa")
+            
+            # Определяем тип бетона по прочности
+            if strength <= 28:
+                concrete_type = 'Бетон Тяжелый В 15'
+            elif strength <= 32:
+                concrete_type = 'Бетон Тяжелый В 25'
+            elif strength <= 38:
+                concrete_type = 'Бетон Тяжелый В 30'
+            elif strength <= 44:
+                concrete_type = 'Бетон Тяжелый В 35'
+            else:
+                concrete_type = 'Бетон Тяжелый В 40'
                 
-                confidence = probabilities[0][predicted_class].item()
-                logger.info(f"Confidence: {confidence}")
-                
-            # Используем маппинг для получения названия типа бетона
-            concrete_type = self.label_mapping[predicted_class]
-            logger.info(f"Concrete type prediction: {concrete_type} (confidence: {confidence})")
-                
+            logger.info(f"Concrete type determined by strength: {concrete_type}")
+            
             return {
                 'concrete_type': concrete_type,
-                'confidence': confidence
+                'confidence': 0.8  # Меньшая уверенность при определении по прочности
             }
             
         except Exception as e:

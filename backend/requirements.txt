@@ -11,3 +11,4 @@ numpy
 pyyaml
 scikit-learn
 timm
+pandas
